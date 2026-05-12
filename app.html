@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1e40af">
+<title>経費管理アプリ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --blue-50:#eff6ff; --blue-100:#dbeafe; --blue-200:#bfdbfe; --blue-500:#3b82f6;
+  --blue-600:#2563eb; --blue-700:#1d4ed8; --blue-800:#1e40af; --blue-900:#1e3a8a;
+  --green-50:#f0fdf4; --green-100:#dcfce7; --green-500:#22c55e; --green-600:#16a34a; --green-700:#15803d;
+  --red-50:#fef2f2; --red-100:#fee2e2; --red-500:#ef4444; --red-600:#dc2626;
+  --orange-50:#fff7ed; --orange-500:#f97316; --orange-600:#ea580c;
+  --yellow-50:#fefce8; --yellow-500:#eab308;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb; --gray-300:#d1d5db;
+  --gray-400:#9ca3af; --gray-500:#6b7280; --gray-600:#4b5563; --gray-700:#374151;
+  --gray-800:#1f2937; --gray-900:#111827;
+  --radius: 12px; --radius-sm: 8px; --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+}
+html, body, #root { height:100%; font-family:'Noto Sans JP',sans-serif; background:var(--gray-50); color:var(--gray-800); }
+body { -webkit-font-smoothing:antialiased; }
+
+/* Layout */
+.app { display:flex; flex-direction:column; height:100%; max-width:480px; margin:0 auto; background:#fff; position:relative; overflow:hidden; }
+.header { background:var(--blue-700); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; min-height:56px; z-index:10; }
+.header h1 { font-size:17px; font-weight:500; flex:1; }
+.header-btn { background:none; border:none; color:#fff; cursor:pointer; padding:6px; border-radius:8px; display:flex; align-items:center; }
+.header-btn:hover { background:rgba(255,255,255,.15); }
+.content { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.bottom-nav { display:flex; border-top:1px solid var(--gray-200); background:#fff; padding-bottom:env(safe-area-inset-bottom); }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 4px 6px; cursor:pointer; color:var(--gray-400); font-size:10px; gap:2px; border:none; background:none; transition:color .15s; }
+.nav-item.active { color:var(--blue-600); }
+.nav-item svg { width:22px; height:22px; }
+
+/* Cards & Sections */
+.section { padding:16px; }
+.section-title { font-size:13px; font-weight:500; color:var(--gray-500); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+.card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:16px; margin-bottom:12px; box-shadow:var(--shadow); }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+
+/* Balance Cards */
+.balance-card { border-radius:var(--radius); padding:16px; margin-bottom:12px; color:#fff; }
+.balance-card.association { background:linear-gradient(135deg, var(--blue-700), var(--blue-900)); }
+.balance-card.group { background:#fff; color:var(--gray-800); border:1px solid var(--gray-200); box-shadow:var(--shadow); }
+.balance-label { font-size:12px; opacity:.8; margin-bottom:2px; }
+.balance-amount { font-size:28px; font-weight:700; letter-spacing:-1px; }
+.balance-amount.group-amt { font-size:22px; color:var(--blue-700); }
+.balance-row { display:flex; justify-content:space-between; margin-top:8px; font-size:12px; }
+.balance-row span:first-child { opacity:.7; }
+
+/* Buttons */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px; border-radius:var(--radius-sm); font-size:15px; font-weight:500; cursor:pointer; border:none; transition:all .15s; font-family:inherit; }
+.btn-primary { background:var(--blue-600); color:#fff; }
+.btn-primary:hover { background:var(--blue-700); }
+.btn-secondary { background:var(--gray-100); color:var(--gray-700); }
+.btn-danger { background:var(--red-50); color:var(--red-600); }
+.btn-danger:hover { background:var(--red-100); }
+.btn-block { width:100%; }
+.btn-lg { padding:14px 24px; font-size:16px; }
+.btn-sm { padding:8px 14px; font-size:13px; }
+.btn-icon { padding:8px; border-radius:50%; }
+
+/* Forms */
+.form-group { margin-bottom:16px; }
+.form-label { display:block; font-size:13px; font-weight:500; color:var(--gray-600); margin-bottom:6px; }
+.form-input { width:100%; padding:10px 12px; border:1px solid var(--gray-300); border-radius:var(--radius-sm); font-size:15px; font-family:inherit; color:var(--gray-800); background:#fff; transition:border-color .15s; }
+.form-input:focus { outline:none; border-color:var(--blue-500); box-shadow:0 0 0 3px var(--blue-100); }
+.form-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:36px; }
+
+/* List Items */
+.list-item { display:flex; align-items:center; padding:12px 16px; border-bottom:1px solid var(--gray-100); cursor:pointer; gap:12px; transition:background .1s; }
+.list-item:hover { background:var(--gray-50); }
+.list-item:last-child { border-bottom:none; }
+.list-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.list-body { flex:1; min-width:0; }
+.list-title { font-size:14px; font-weight:500; }
+.list-sub { font-size:12px; color:var(--gray-500); margin-top:1px; }
+.list-right { text-align:right; flex-shrink:0; }
+.list-amount { font-size:15px; font-weight:600; }
+.list-amount.expense { color:var(--red-600); }
+.list-amount.income { color:var(--green-600); }
+.list-date { font-size:11px; color:var(--gray-400); }
+
+/* Tags / Badges */
+.badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:500; }
+.badge-blue { background:var(--blue-100); color:var(--blue-700); }
+.badge-green { background:var(--green-100); color:var(--green-700); }
+.badge-red { background:var(--red-100); color:var(--red-600); }
+.badge-orange { background:var(--orange-50); color:var(--orange-600); }
+.badge-gray { background:var(--gray-100); color:var(--gray-600); }
+
+/* Entry mode buttons */
+.entry-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
+.entry-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:28px 16px; border-radius:var(--radius); border:2px dashed var(--gray-300); cursor:pointer; transition:all .15s; background:#fff; }
+.entry-card:hover { border-color:var(--blue-400); background:var(--blue-50); }
+.entry-card svg { width:36px; height:36px; color:var(--blue-600); }
+.entry-card span { font-size:14px; font-weight:500; color:var(--gray-700); }
+
+/* Tabs */
+.tabs { display:flex; border-bottom:2px solid var(--gray-200); padding:0 16px; background:#fff; }
+.tab { padding:10px 16px; font-size:13px; font-weight:500; color:var(--gray-500); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; }
+.tab.active { color:var(--blue-600); border-bottom-color:var(--blue-600); }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; display:flex; align-items:flex-end; justify-content:center; }
+.modal { background:#fff; border-radius:16px 16px 0 0; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; padding:20px 16px env(safe-area-inset-bottom); }
+.modal-handle { width:40px; height:4px; background:var(--gray-300); border-radius:99px; margin:0 auto 16px; }
+
+/* Toast */
+.toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--gray-800); color:#fff; padding:10px 20px; border-radius:99px; font-size:14px; z-index:200; box-shadow:var(--shadow-lg); animation:toastIn .3s ease; }
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+/* Login */
+.login-page { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding:24px; background:linear-gradient(135deg, var(--blue-700), var(--blue-900)); color:#fff; }
+.login-logo { font-size:48px; margin-bottom:8px; }
+.login-title { font-size:22px; font-weight:700; margin-bottom:4px; }
+.login-sub { font-size:14px; opacity:.7; margin-bottom:32px; }
+.login-box { background:#fff; border-radius:var(--radius); padding:24px; width:100%; color:var(--gray-800); }
+.login-box h2 { font-size:16px; margin-bottom:16px; }
+
+/* Utilities */
+.text-center { text-align:center; }
+.text-sm { font-size:13px; }
+.text-xs { font-size:11px; }
+.text-gray { color:var(--gray-500); }
+.text-red { color:var(--red-600); }
+.text-green { color:var(--green-600); }
+.text-blue { color:var(--blue-600); }
+.mt-2 { margin-top:8px; }
+.mt-4 { margin-top:16px; }
+.mb-2 { margin-bottom:8px; }
+.mb-4 { margin-bottom:16px; }
+.px-4 { padding-left:16px; padding-right:16px; }
+.py-2 { padding-top:8px; padding-bottom:8px; }
+.flex { display:flex; }
+.flex-col { flex-direction:column; }
+.items-center { align-items:center; }
+.justify-between { justify-content:space-between; }
+.gap-2 { gap:8px; }
+.gap-3 { gap:12px; }
+.w-full { width:100%; }
+.flex-1 { flex:1; }
+.font-bold { font-weight:700; }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; color:var(--gray-400); }
+.empty-state svg { width:48px; height:48px; margin-bottom:12px; }
+.empty-state p { font-size:14px; }
+
+/* Photo preview */
+.photo-preview { width:100%; max-height:200px; object-fit:contain; border-radius:var(--radius-sm); border:1px solid var(--gray-200); margin-bottom:12px; background:var(--gray-100); }
+.ocr-loading { display:flex; align-items:center; gap:10px; padding:16px; background:var(--blue-50); border-radius:var(--radius-sm); margin-bottom:16px; color:var(--blue-700); font-size:14px; }
+.spinner { width:20px; height:20px; border:2px solid var(--blue-200); border-top-color:var(--blue-600); border-radius:50%; animation:spin .6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Validation indicator */
+.validation-ok { background:var(--green-50); border:1px solid var(--green-500); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px; color:var(--green-700); font-size:13px; display:flex; align-items:center; gap:8px; }
+.validation-warn { background:var(--yellow-50); border:1px solid var(--yellow-500); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px; color:var(--gray-700); font-size:13px; display:flex; align-items:center; gap:8px; }
+
+/* Setup wizard */
+.wizard-step { padding:24px 16px; }
+.wizard-step-num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--blue-600); color:#fff; font-size:13px; font-weight:700; margin-right:8px; }
+.wizard-step h3 { font-size:16px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; }
+.wizard-progress { display:flex; gap:4px; padding:0 16px; margin-bottom:8px; }
+.wizard-bar { flex:1; height:3px; border-radius:99px; background:var(--gray-200); }
+.wizard-bar.done { background:var(--blue-600); }
+.wizard-bar.current { background:var(--blue-400); }
+
+/* Confirm dialog */
+.confirm-actions { display:flex; gap:8px; margin-top:16px; }
+.confirm-actions .btn { flex:1; }
+
+/* Detail view */
+.detail-row { display:flex; padding:12px 0; border-bottom:1px solid var(--gray-100); }
+.detail-label { width:100px; flex-shrink:0; font-size:13px; color:var(--gray-500); padding-top:2px; }
+.detail-value { flex:1; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+// ===== SVG Icons (all accept and forward props like style, className) =====
+const icon = (paths) => (props) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{paths}</svg>;
+const Icons = {
+  Home: icon(<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>),
+  List: icon(<><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>),
+  Plus: icon(<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>),
+  Settings: icon(<><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></>),
+  Camera: icon(<><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>),
+  Edit: icon(<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>),
+  Trash: icon(<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>),
+  Back: icon(<polyline points="15 18 9 12 15 6"/>),
+  Wallet: icon(<><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></>),
+  ArrowDown: icon(<><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>),
+  ArrowUp: icon(<><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>),
+  Users: icon(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>),
+  Check: icon(<polyline points="20 6 9 17 4 12"/>),
+  X: icon(<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>),
+  FileText: icon(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>),
+  DollarSign: icon(<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>),
+  ArrowRight: icon(<><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>),
+  Folder: icon(<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>),
+  Image: icon(<><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>),
+  RefreshCw: icon(<><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>),
+  Calendar: icon(<><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>),
+  Tag: icon(<><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></>),
+  Mail: icon(<><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>),
+};
+
+// ===== Format helpers =====
+const fmt = (n) => '¥' + Number(n||0).toLocaleString('ja-JP');
+const fmtDate = (d) => { const dt=new Date(d); return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`; };
+
+// ===== Mock Data Store =====
+const createMockData = () => ({
+  settings: { 年度開始月: 4, 現在の年度: 2026 },
+  groups: [
+    { name: '企画グループ', active: true },
+    { name: '広報グループ', active: true },
+    { name: 'イベントグループ', active: true },
+    { name: '総務グループ', active: true },
+  ],
+  users: [
+    { name: '田中 太郎', email: 'tanaka@example.com', groups: '企画グループ,広報グループ', role: '経理', active: true },
+    { name: '佐藤 花子', email: 'sato@example.com', groups: '企画グループ', role: 'メンバー', active: true },
+    { name: '鈴木 一郎', email: 'suzuki@example.com', groups: '広報グループ,イベントグループ', role: 'メンバー', active: true },
+    { name: '高橋 美咲', email: 'takahashi@example.com', groups: 'イベントグループ', role: 'メンバー', active: true },
+    { name: '伊藤 健太', email: 'ito@example.com', groups: '総務グループ', role: '経理', active: true },
+  ],
+  categories: [
+    { name: '交通費', group: '活動費', active: true },
+    { name: '消耗品費', group: '活動費', active: true },
+    { name: '食費・飲料', group: '活動費', active: true },
+    { name: '会場費', group: '活動費', active: true },
+    { name: '印刷費', group: '事務費', active: true },
+    { name: '通信費', group: '事務費', active: true },
+    { name: '雑費', group: 'その他', active: true },
+  ],
+  fiscalYears: {
+    2026: {
+      transactions: [
+        { id:'TXN-20260510-001', timestamp:'2026-05-10T10:30:00', date:'2026-05-10', seller:'ファミリーマート', amount:1580, category:'食費・飲料', categoryGroup:'活動費', group:'企画グループ', reporter:'佐藤 花子', email:'sato@example.com', memo:'打ち合わせ用お茶', photoUrl:'', method:'手入力', status:'有効' },
+        { id:'TXN-20260512-001', timestamp:'2026-05-12T14:15:00', date:'2026-05-12', seller:'東急ハンズ', amount:3200, category:'消耗品費', categoryGroup:'活動費', group:'企画グループ', reporter:'佐藤 花子', email:'sato@example.com', memo:'模造紙・マーカー', photoUrl:'receipt1.jpg', method:'レシート撮影', status:'有効' },
+        { id:'TXN-20260515-001', timestamp:'2026-05-15T09:00:00', date:'2026-05-15', seller:'JR東日本', amount:640, category:'交通費', categoryGroup:'活動費', group:'広報グループ', reporter:'鈴木 一郎', email:'suzuki@example.com', memo:'取材移動', photoUrl:'receipt2.jpg', method:'レシート撮影', status:'有効' },
+        { id:'TXN-20260520-001', timestamp:'2026-05-20T16:45:00', date:'2026-05-20', seller:'コミュニティセンター', amount:5000, category:'会場費', categoryGroup:'活動費', group:'イベントグループ', reporter:'高橋 美咲', email:'takahashi@example.com', memo:'6月イベント会場予約', photoUrl:'', method:'手入力', status:'有効' },
+        { id:'TXN-20260525-001', timestamp:'2026-05-25T11:20:00', date:'2026-05-25', seller:'キンコーズ', amount:2400, category:'印刷費', categoryGroup:'事務費', group:'広報グループ', reporter:'鈴木 一郎', email:'suzuki@example.com', memo:'チラシ印刷', photoUrl:'receipt3.jpg', method:'レシート撮影', status:'有効' },
+        { id:'TXN-20260601-001', timestamp:'2026-06-01T13:00:00', date:'2026-06-01', seller:'ダイソー', amount:1100, category:'消耗品費', categoryGroup:'活動費', group:'イベントグループ', reporter:'高橋 美咲', email:'takahashi@example.com', memo:'装飾品', photoUrl:'', method:'手入力', status:'削除済' },
+      ],
+      cashIn: [
+        { id:'IN-20260401-001', date:'2026-04-01', amount:2000000, source:'会費徴収', memo:'2026年度会費', recorder:'田中 太郎', email:'tanaka@example.com', status:'有効' },
+        { id:'IN-20260415-001', date:'2026-04-15', amount:500000, source:'助成金', memo:'市民活動助成金', recorder:'伊藤 健太', email:'ito@example.com', status:'有効' },
+      ],
+      cashTransfers: [
+        { id:'TRF-20260401-001', date:'2026-04-01', type:'配布', group:'企画グループ', amount:500000, memo:'2026年度予算配布', recorder:'田中 太郎', email:'tanaka@example.com', status:'有効' },
+        { id:'TRF-20260401-002', date:'2026-04-01', type:'配布', group:'広報グループ', amount:300000, memo:'2026年度予算配布', recorder:'田中 太郎', email:'tanaka@example.com', status:'有効' },
+        { id:'TRF-20260401-003', date:'2026-04-01', type:'配布', group:'イベントグループ', amount:400000, memo:'2026年度予算配布', recorder:'田中 太郎', email:'tanaka@example.com', status:'有効' },
+        { id:'TRF-20260401-004', date:'2026-04-01', type:'配布', group:'総務グループ', amount:200000, memo:'2026年度予算配布', recorder:'田中 太郎', email:'tanaka@example.com', status:'有効' },
+      ],
+      budgets: [
+        { group:'全体', amount:2500000 },
+        { group:'企画グループ', amount:500000 },
+        { group:'広報グループ', amount:300000 },
+        { group:'イベントグループ', amount:400000 },
+        { group:'総務グループ', amount:200000 },
+      ],
+    }
+  }
+});
+
+// ===== App Component =====
+function App() {
+  const [data, setData] = useState(createMockData);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [page, setPage] = useState('login');
+  const [subPage, setSubPage] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [historyTab, setHistoryTab] = useState('expenses');
+  const [setupStep, setSetupStep] = useState(0);
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  // === Browser history integration for back button/swipe ===
+  const isNavigating = useRef(false);
+
+  const navigate = useCallback((newPage, newSubPage = null, newSelectedItem = null) => {
+    isNavigating.current = true;
+    const state = { page: newPage, subPage: newSubPage };
+    history.pushState(state, '', `#${newPage}${newSubPage ? '/'+newSubPage : ''}`);
+    setPage(newPage);
+    setSubPage(newSubPage);
+    if (newSelectedItem !== undefined) setSelectedItem(newSelectedItem);
+    isNavigating.current = false;
+  }, []);
+
+  const goBack = useCallback(() => {
+    history.back();
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (isNavigating.current) return;
+      // Close modal first if open
+      if (modal) { setModal(null); return; }
+      const state = e.state;
+      if (state) {
+        setPage(state.page);
+        setSubPage(state.subPage || null);
+        if (!state.subPage) setSelectedItem(null);
+      } else {
+        // No state = initial entry; go to home or login
+        if (currentUser) {
+          setSubPage(null);
+          setSelectedItem(null);
+          setPage('home');
+        } else {
+          setPage('login');
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    // Set initial state
+    if (!history.state) {
+      history.replaceState({ page, subPage }, '', `#${page}`);
+    }
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentUser, modal]);
+
+  const fy = data.settings.現在の年度;
+  const fyData = data.fiscalYears[fy] || { transactions:[], cashIn:[], cashTransfers:[], budgets:[] };
+  const isAccountant = currentUser?.role === '経理';
+  const userGroups = currentUser ? currentUser.groups.split(',').map(g=>g.trim()) : [];
+
+  const activeTxns = fyData.transactions.filter(t=>t.status==='有効');
+  const activeTransfers = fyData.cashTransfers.filter(t=>t.status==='有効');
+  const activeCashIn = fyData.cashIn.filter(t=>t.status==='有効');
+
+  const totalCashIn = activeCashIn.reduce((s,r) => s+r.amount, 0);
+  const totalDistributed = activeTransfers.filter(t=>t.type==='配布').reduce((s,r)=>s+r.amount, 0);
+  const totalReturned = activeTransfers.filter(t=>t.type==='返金').reduce((s,r)=>s+r.amount, 0);
+  const assocCash = totalCashIn - totalDistributed + totalReturned;
+
+  const groupBalance = (gname) => {
+    const received = activeTransfers.filter(t=>t.type==='配布' && t.group===gname).reduce((s,r)=>s+r.amount,0);
+    const spent = activeTxns.filter(t=>t.group===gname).reduce((s,r)=>s+r.amount,0);
+    const returned = activeTransfers.filter(t=>t.type==='返金' && t.group===gname).reduce((s,r)=>s+r.amount,0);
+    return { received, spent, returned, balance: received - spent - returned };
+  };
+
+  const getBudget = (gname) => {
+    const b = fyData.budgets.find(b=>b.group===gname);
+    return b ? b.amount : 0;
+  };
+
+  // Login handler
+  const handleLogin = (email) => {
+    const user = data.users.find(u => u.email === email && u.active);
+    if (user) {
+      setCurrentUser(user);
+      navigate('home');
+    } else {
+      showToast('このメールアドレスは登録されていません');
+    }
+  };
+
+  // Quick login for demo
+  const demoLogin = (role) => {
+    const user = data.users.find(u => u.role === role && u.active);
+    if (user) { setCurrentUser(user); navigate('home'); }
+  };
+
+  // Add transaction
+  const addTransaction = (txn) => {
+    const newTxn = {
+      ...txn,
+      id: `TXN-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(fyData.transactions.length+1).padStart(3,'0')}`,
+      timestamp: new Date().toISOString(),
+      reporter: currentUser.name,
+      email: currentUser.email,
+      status: '有効',
+    };
+    const newData = {...data};
+    newData.fiscalYears[fy] = {...fyData, transactions:[...fyData.transactions, newTxn]};
+    setData(newData);
+    showToast('記録を登録しました');
+    goBack();
+  };
+
+  // Add cash-in
+  const addCashIn = (record) => {
+    const newRecord = {
+      ...record,
+      id: `IN-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(fyData.cashIn.length+1).padStart(3,'0')}`,
+      recorder: currentUser.name,
+      email: currentUser.email,
+      status: '有効',
+    };
+    const newData = {...data};
+    newData.fiscalYears[fy] = {...fyData, cashIn:[...fyData.cashIn, newRecord]};
+    setData(newData);
+    showToast('入金記録を登録しました');
+    goBack();
+  };
+
+  // Add cash transfer
+  const addTransfer = (record) => {
+    const newRecord = {
+      ...record,
+      id: `TRF-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(fyData.cashTransfers.length+1).padStart(3,'0')}`,
+      recorder: currentUser.name,
+      email: currentUser.email,
+      status: '有効',
+    };
+    const newData = {...data};
+    newData.fiscalYears[fy] = {...fyData, cashTransfers:[...fyData.cashTransfers, newRecord]};
+    setData(newData);
+    showToast('現金移動を記録しました');
+    goBack();
+  };
+
+  // Soft delete
+  const deleteRecord = (type, id) => {
+    const newData = {...data};
+    const yd = {...fyData};
+    if (type==='transaction') yd.transactions = yd.transactions.map(t => t.id===id ? {...t,status:'削除済'} : t);
+    if (type==='cashIn') yd.cashIn = yd.cashIn.map(t => t.id===id ? {...t,status:'削除済'} : t);
+    if (type==='transfer') yd.cashTransfers = yd.cashTransfers.map(t => t.id===id ? {...t,status:'削除済'} : t);
+    newData.fiscalYears[fy] = yd;
+    setData(newData);
+    setModal(null);
+    setSelectedItem(null);
+    goBack();
+    showToast('記録を削除しました');
+  };
+
+  // Restore
+  const restoreRecord = (type, id) => {
+    const newData = {...data};
+    const yd = {...fyData};
+    if (type==='transaction') yd.transactions = yd.transactions.map(t => t.id===id ? {...t,status:'有効'} : t);
+    if (type==='cashIn') yd.cashIn = yd.cashIn.map(t => t.id===id ? {...t,status:'有効'} : t);
+    if (type==='transfer') yd.cashTransfers = yd.cashTransfers.map(t => t.id===id ? {...t,status:'有効'} : t);
+    newData.fiscalYears[fy] = yd;
+    setData(newData);
+    showToast('記録を復元しました');
+  };
+
+  // Render based on page
+  const renderPage = () => {
+    if (page === 'login') return <LoginPage onLogin={handleLogin} onDemo={demoLogin} />;
+    if (page === 'setup') return <SetupWizard step={setupStep} setStep={setSetupStep} onComplete={() => { navigate('home'); showToast('初期設定が完了しました'); }} onCancel={goBack} />;
+    if (subPage === 'newExpense') return <NewExpensePage categories={data.categories.filter(c=>c.active)} groups={userGroups} isAccountant={isAccountant} onSubmit={addTransaction} onCashIn={()=>navigate(page,'newCashIn')} onTransfer={()=>navigate(page,'newTransfer')} onBack={goBack} />;
+    if (subPage === 'newCashIn') return <NewCashInPage onSubmit={addCashIn} onBack={goBack} />;
+    if (subPage === 'newTransfer') return <NewTransferPage groups={data.groups.filter(g=>g.active)} onSubmit={addTransfer} onBack={goBack} />;
+    if (subPage === 'expenseDetail') return <ExpenseDetailPage item={selectedItem} isAccountant={isAccountant} userGroups={userGroups}
+      categories={data.categories.filter(c=>c.active)} groups={data.groups.filter(g=>g.active)}
+      onDelete={(id)=>setModal({type:'confirmDelete',deleteType:'transaction',id})}
+      onRestore={(id)=>restoreRecord('transaction',id)}
+      onUpdate={(id, updates) => {
+        const newData = {...data};
+        const yd = {...fyData};
+        yd.transactions = yd.transactions.map(t => t.id===id ? {...t,...updates} : t);
+        newData.fiscalYears[fy] = yd;
+        setData(newData);
+        setSelectedItem(prev => prev?.id===id ? {...prev,...updates} : prev);
+        showToast('記録を更新しました');
+      }}
+      onBack={goBack} />;
+    if (subPage === 'cashInDetail') return <CashInDetailPage item={selectedItem} isAccountant={isAccountant} onDelete={(id)=>setModal({type:'confirmDelete',deleteType:'cashIn',id})} onRestore={(id)=>restoreRecord('cashIn',id)} onBack={goBack} />;
+    if (subPage === 'transferDetail') return <TransferDetailPage item={selectedItem} isAccountant={isAccountant} onDelete={(id)=>setModal({type:'confirmDelete',deleteType:'transfer',id})} onRestore={(id)=>restoreRecord('transfer',id)} onBack={goBack} />;
+    if (subPage === 'categories') return <CategoriesPage categories={data.categories} onUpdate={(cats)=>{setData({...data, categories:cats});}} onBack={goBack} />;
+    if (subPage === 'groups') return <GroupsPage groups={data.groups} onUpdate={(grps)=>{setData({...data, groups:grps});}} onBack={goBack} />;
+    if (subPage === 'settings') return <SettingsPage data={data} onBack={goBack} onStartSetup={()=>{setSetupStep(0);navigate('setup');}} />;
+    if (subPage === 'newFiscalYear') return <NewFiscalYearPage data={data} onComplete={(yr)=>{
+      const newData = {...data};
+      newData.fiscalYears[yr] = { transactions:[], cashIn:[], cashTransfers:[], budgets: data.groups.filter(g=>g.active).map(g=>({group:g.name,amount:0})).concat([{group:'全体',amount:0}]) };
+      newData.settings = {...newData.settings, 現在の年度: yr};
+      setData(newData);
+      showToast(`${yr}年度を作成しました`);
+      goBack();
+    }} onBack={goBack} />;
+    if (subPage === 'appSettings') return <AppSettingsPage data={data} onSave={(newSettings)=>{
+      setData({...data, settings:{...data.settings, ...newSettings}});
+      showToast('設定を保存しました');
+      goBack();
+    }} onBack={goBack} />;
+
+    switch(page) {
+      case 'home': return <HomePage
+        assocCash={assocCash} totalCashIn={totalCashIn} totalDistributed={totalDistributed} totalReturned={totalReturned}
+        groups={data.groups.filter(g=>g.active)} groupBalance={groupBalance} getBudget={getBudget}
+        isAccountant={isAccountant} userGroups={userGroups} fy={fy}
+        onNewExpense={()=>navigate(page,'newExpense')} onNewCashIn={()=>navigate(page,'newCashIn')} onNewTransfer={()=>navigate(page,'newTransfer')}
+      />;
+      case 'history': return <HistoryPage
+        transactions={fyData.transactions} cashIn={fyData.cashIn} transfers={fyData.cashTransfers}
+        isAccountant={isAccountant} userGroups={userGroups}
+        tab={historyTab} setTab={setHistoryTab}
+        onSelectExpense={(item)=>{setSelectedItem(item);navigate(page,'expenseDetail');}}
+        onSelectCashIn={(item)=>{setSelectedItem(item);navigate(page,'cashInDetail');}}
+        onSelectTransfer={(item)=>{setSelectedItem(item);navigate(page,'transferDetail');}}
+      />;
+      case 'settings': return <SettingsPage data={data} isAccountant={isAccountant}
+        onCategories={()=>navigate(page,'categories')}
+        onGroups={()=>navigate(page,'groups')}
+        onSettings={()=>navigate(page,'settings')}
+        onNewFiscalYear={()=>navigate(page,'newFiscalYear')}
+        onAppSettings={()=>navigate(page,'appSettings')}
+        onLogout={()=>{setCurrentUser(null);navigate('login');}}
+        onStartSetup={()=>{setSetupStep(0);navigate('setup');}}
+      />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="app">
+      {renderPage()}
+      {currentUser && !subPage && page !== 'login' && page !== 'setup' && (
+        <nav className="bottom-nav">
+          <button className={`nav-item ${page==='home'?'active':''}`} onClick={()=>navigate('home')}>
+            <Icons.Home /><span>ホーム</span>
+          </button>
+          <button className={`nav-item ${page==='history'?'active':''}`} onClick={()=>navigate('history')}>
+            <Icons.List /><span>履歴</span>
+          </button>
+          <button className={`nav-item`} onClick={()=>navigate(page,'newExpense')} style={{color:'var(--blue-600)'}}>
+            <div style={{background:'var(--blue-600)',borderRadius:'50%',width:36,height:36,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',marginTop:-8}}><Icons.Plus /></div>
+            <span>記録</span>
+          </button>
+          <button className={`nav-item ${page==='settings'?'active':''}`} onClick={()=>navigate('settings')}>
+            <Icons.Settings /><span>設定</span>
+          </button>
+        </nav>
+      )}
+      {modal?.type === 'confirmDelete' && (
+        <div className="modal-overlay" onClick={()=>setModal(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-handle" />
+            <h3 style={{fontSize:16,fontWeight:600,marginBottom:8}}>この記録を削除しますか？</h3>
+            <p className="text-sm text-gray">削除した記録は残高計算に含まれなくなります。経理担当者は後から復元できます。</p>
+            <div className="confirm-actions">
+              <button className="btn btn-secondary" onClick={()=>setModal(null)}>キャンセル</button>
+              <button className="btn btn-danger" onClick={()=>deleteRecord(modal.deleteType, modal.id)}>削除する</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {toast && <div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+// ===== Login Page =====
+function LoginPage({ onLogin, onDemo }) {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  return (
+    <div className="login-page">
+      <div className="login-logo">💰</div>
+      <div className="login-title">経費管理</div>
+      <div className="login-sub">団体の経費を簡単に管理</div>
+      <div className="login-box">
+        {!sent ? (<>
+          <h2>ログイン</h2>
+          <div className="form-group">
+            <label className="form-label">メールアドレス</label>
+            <input type="email" className="form-input" placeholder="example@email.com" value={email} onChange={e=>setEmail(e.target.value)} />
+          </div>
+          <button className="btn btn-primary btn-block btn-lg" onClick={()=>{if(email){setSent(true);setTimeout(()=>onLogin(email),1500);}}}>
+            ログインリンクを送信
+          </button>
+          <div style={{marginTop:24,paddingTop:16,borderTop:'1px solid var(--gray-200)'}}>
+            <p className="text-sm text-gray text-center mb-2">デモ用クイックログイン</p>
+            <div className="flex gap-2">
+              <button className="btn btn-secondary flex-1 btn-sm" onClick={()=>onDemo('経理')}>経理として</button>
+              <button className="btn btn-secondary flex-1 btn-sm" onClick={()=>onDemo('メンバー')}>メンバーとして</button>
+            </div>
+          </div>
+        </>) : (
+          <div className="text-center" style={{padding:'20px 0'}}>
+            <div style={{fontSize:40,marginBottom:12}}>📧</div>
+            <h2 style={{marginBottom:8}}>メールを確認してください</h2>
+            <p className="text-sm text-gray">{email} にログインリンクを送信しました。メール内のリンクをタップしてください。</p>
+            <p className="text-sm text-gray mt-4">(デモ: 自動でログインします...)</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ===== Home Page (Dashboard) =====
+function HomePage({ assocCash, totalCashIn, totalDistributed, totalReturned, groups, groupBalance, getBudget, isAccountant, userGroups, fy, onNewExpense, onNewCashIn, onNewTransfer }) {
+  const visibleGroups = isAccountant ? groups : groups.filter(g => userGroups.includes(g.name));
+  const totalGroupCash = groups.reduce((s,g) => s + groupBalance(g.name).balance, 0);
+  const totalAllCash = assocCash + totalGroupCash;
+  const totalSpent = groups.reduce((s,g) => s + groupBalance(g.name).spent, 0);
+
+  return (
+    <>
+      <div className="header">
+        <h1>{fy}年度 経費管理</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          {isAccountant && (
+            <div className="balance-card association">
+              <div className="balance-label">団体 手元現金</div>
+              <div className="balance-amount">{fmt(assocCash)}</div>
+              <div className="balance-row"><span>入金合計</span><span>{fmt(totalCashIn)}</span></div>
+              <div className="balance-row"><span>配布合計</span><span>-{fmt(totalDistributed)}</span></div>
+              <div className="balance-row"><span>返金合計</span><span>+{fmt(totalReturned)}</span></div>
+              <div style={{marginTop:10,paddingTop:8,borderTop:'1px solid rgba(255,255,255,.2)',fontSize:12}}>
+                <div className="balance-row"><span>全体の現金合計</span><span style={{fontWeight:700}}>{fmt(totalAllCash)}</span></div>
+                <div className="balance-row"><span>（= 入金 - 全支出）</span><span>{fmt(totalCashIn - totalSpent)}</span></div>
+                {totalAllCash === totalCashIn - totalSpent
+                  ? <div style={{marginTop:4,opacity:.8,fontSize:11}}>✓ 残高検証OK</div>
+                  : <div style={{marginTop:4,color:'#fca5a5',fontSize:11}}>⚠ 残高不一致</div>
+                }
+              </div>
+            </div>
+          )}
+
+          <div className="section-title" style={{marginTop:isAccountant?8:0}}>グループ別残高</div>
+          {visibleGroups.map(g => {
+            const bal = groupBalance(g.name);
+            const budget = getBudget(g.name);
+            return (
+              <div key={g.name} className="balance-card group">
+                <div className="flex justify-between items-center">
+                  <div className="balance-label" style={{color:'var(--gray-500)',opacity:1}}>{g.name}</div>
+                  {budget > 0 && <span className="badge badge-blue">予算 {fmt(budget)}</span>}
+                </div>
+                <div className="balance-amount group-amt">{fmt(bal.balance)}</div>
+                <div className="balance-row" style={{color:'var(--gray-500)'}}><span>受取</span><span>{fmt(bal.received)}</span></div>
+                <div className="balance-row" style={{color:'var(--gray-500)'}}><span>支出</span><span className="text-red">-{fmt(bal.spent)}</span></div>
+                {bal.returned > 0 && <div className="balance-row" style={{color:'var(--gray-500)'}}><span>返金</span><span>-{fmt(bal.returned)}</span></div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="section" style={{paddingTop:0}}>
+          <div className="section-title">アクション</div>
+          <div className="entry-grid">
+            <div className="entry-card" onClick={onNewExpense}>
+              <Icons.Camera /><span>レシート撮影</span>
+            </div>
+            <div className="entry-card" onClick={onNewExpense}>
+              <Icons.Edit /><span>手入力で記録</span>
+            </div>
+          </div>
+          {isAccountant && (
+            <div className="entry-grid" style={{paddingTop:0}}>
+              <div className="entry-card" onClick={onNewCashIn} style={{borderColor:'var(--green-500)',borderStyle:'dashed'}}>
+                <Icons.ArrowDown style={{color:'var(--green-600)'}} /><span>入金記録</span>
+              </div>
+              <div className="entry-card" onClick={onNewTransfer} style={{borderColor:'var(--orange-500)',borderStyle:'dashed'}}>
+                <Icons.ArrowRight style={{color:'var(--orange-600)'}} /><span>現金移動</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== New Expense Page =====
+function NewExpensePage({ categories, groups, isAccountant, onSubmit, onCashIn, onTransfer, onBack }) {
+  const [mode, setMode] = useState(null); // null, 'camera', 'manual'
+  const [photo, setPhoto] = useState(null);
+  const [ocrDone, setOcrDone] = useState(false);
+  const [form, setForm] = useState({ date:'', seller:'', amount:'', category:'', group:groups[0]||'', memo:'' });
+  const fileRef = useRef();
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhoto(url);
+      setMode('camera');
+      // Simulate OCR
+      setTimeout(() => {
+        setForm(f => ({...f, date:'2026-06-15', seller:'ローソン 渋谷店', amount:'1280'}));
+        setOcrDone(true);
+      }, 2000);
+    }
+  };
+
+  const catGroups = useMemo(() => {
+    const map = {};
+    categories.forEach(c => { if (!map[c.group]) map[c.group]=[]; map[c.group].push(c); });
+    return map;
+  }, [categories]);
+
+  if (!mode) {
+    return (
+      <>
+        <div className="header">
+          <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+          <h1>支出を記録</h1>
+        </div>
+        <div className="content">
+          <div className="entry-grid" style={{paddingTop:32}}>
+            <div className="entry-card" onClick={()=>fileRef.current?.click()}>
+              <Icons.Camera /><span>レシート撮影</span>
+            </div>
+            <div className="entry-card" onClick={()=>setMode('manual')}>
+              <Icons.Edit /><span>手入力で記録</span>
+            </div>
+          </div>
+          <p className="text-sm text-gray text-center">レシートを撮影するとOCRで自動読み取りします</p>
+          {isAccountant && (
+            <>
+              <div className="section-title px-4" style={{marginTop:16}}>経理専用</div>
+              <div className="entry-grid" style={{paddingTop:0}}>
+                <div className="entry-card" onClick={onCashIn} style={{borderColor:'var(--green-500)',borderStyle:'dashed'}}>
+                  <Icons.ArrowDown style={{color:'var(--green-600)'}} /><span>入金記録</span>
+                </div>
+                <div className="entry-card" onClick={onTransfer} style={{borderColor:'var(--orange-500)',borderStyle:'dashed'}}>
+                  <Icons.ArrowRight style={{color:'var(--orange-600)'}} /><span>現金移動</span>
+                </div>
+              </div>
+            </>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handlePhoto} />
+        </div>
+      </>
+    );
+  }
+
+  const canSubmit = form.date && form.amount && form.category && form.group;
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={()=>{setMode(null);setPhoto(null);setOcrDone(false);setForm({date:'',seller:'',amount:'',category:'',group:groups[0]||'',memo:''});}}><Icons.Back /></button>
+        <h1>{mode==='camera' ? 'レシート読み取り' : '手入力'}</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          {photo && <img src={photo} className="photo-preview" alt="receipt" />}
+          {mode==='camera' && !ocrDone && (
+            <div className="ocr-loading"><div className="spinner" /><span>OCRで読み取り中...</span></div>
+          )}
+          {mode==='camera' && ocrDone && (
+            <div className="validation-ok"><Icons.Check style={{width:16,height:16,flexShrink:0}} /> OCR読み取り完了 — 内容を確認してください</div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">購入日 *</label>
+            <input type="date" className="form-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">店舗名</label>
+            <input type="text" className="form-input" placeholder="例: ファミリーマート" value={form.seller} onChange={e=>setForm({...form,seller:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">合計金額 (円) *</label>
+            <input type="number" className="form-input" placeholder="0" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">勘定科目 *</label>
+            <select className="form-input form-select" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
+              <option value="">選択してください</option>
+              {Object.entries(catGroups).map(([group, cats]) => (
+                <optgroup key={group} label={group}>
+                  {cats.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">活動グループ *</label>
+            <select className="form-input form-select" value={form.group} onChange={e=>setForm({...form,group:e.target.value})}>
+              {groups.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">メモ</label>
+            <input type="text" className="form-input" placeholder="任意のメモ" value={form.memo} onChange={e=>setForm({...form,memo:e.target.value})} />
+          </div>
+          {mode === 'manual' && (
+            <div className="form-group">
+              <label className="form-label">レシート写真（任意）</label>
+              <button className="btn btn-secondary btn-sm" onClick={()=>fileRef.current?.click()}>
+                <Icons.Camera style={{width:16,height:16}} /> 写真を添付
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handlePhoto} />
+            </div>
+          )}
+          <button className="btn btn-primary btn-block btn-lg mt-4" disabled={!canSubmit} style={{opacity:canSubmit?1:.5}}
+            onClick={()=>onSubmit({
+              date:form.date, seller:form.seller, amount:Number(form.amount),
+              category:form.category, categoryGroup: categories.find(c=>c.name===form.category)?.group||'',
+              group:form.group, memo:form.memo, photoUrl:photo?'uploaded.jpg':'', method:mode==='camera'?'レシート撮影':'手入力'
+            })}>
+            登録
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== New Cash-In Page =====
+function NewCashInPage({ onSubmit, onBack }) {
+  const [form, setForm] = useState({ date:'', amount:'', source:'', memo:'' });
+  const canSubmit = form.date && form.amount && form.source;
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>入金記録</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          <div className="form-group">
+            <label className="form-label">入金日 *</label>
+            <input type="date" className="form-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">金額 (円) *</label>
+            <input type="number" className="form-input" placeholder="0" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">入金元 *</label>
+            <input type="text" className="form-input" placeholder="例: 会費徴収" value={form.source} onChange={e=>setForm({...form,source:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">メモ</label>
+            <input type="text" className="form-input" placeholder="任意のメモ" value={form.memo} onChange={e=>setForm({...form,memo:e.target.value})} />
+          </div>
+          <button className="btn btn-primary btn-block btn-lg mt-4" disabled={!canSubmit} style={{opacity:canSubmit?1:.5}}
+            onClick={()=>onSubmit({date:form.date, amount:Number(form.amount), source:form.source, memo:form.memo})}>
+            登録
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== New Transfer Page =====
+function NewTransferPage({ groups, onSubmit, onBack }) {
+  const [form, setForm] = useState({ date:'', type:'配布', group:groups[0]?.name||'', amount:'', memo:'' });
+  const canSubmit = form.date && form.amount && form.group;
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>現金移動記録</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          <div className="form-group">
+            <label className="form-label">種別 *</label>
+            <div className="flex gap-2">
+              <button className={`btn flex-1 ${form.type==='配布'?'btn-primary':'btn-secondary'}`} onClick={()=>setForm({...form,type:'配布'})}>配布（団体→グループ）</button>
+              <button className={`btn flex-1 ${form.type==='返金'?'btn-primary':'btn-secondary'}`} onClick={()=>setForm({...form,type:'返金'})}>返金（グループ→団体）</button>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">日付 *</label>
+            <input type="date" className="form-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">活動グループ *</label>
+            <select className="form-input form-select" value={form.group} onChange={e=>setForm({...form,group:e.target.value})}>
+              {groups.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">金額 (円) *</label>
+            <input type="number" className="form-input" placeholder="0" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">メモ</label>
+            <input type="text" className="form-input" placeholder="任意のメモ" value={form.memo} onChange={e=>setForm({...form,memo:e.target.value})} />
+          </div>
+          <button className="btn btn-primary btn-block btn-lg mt-4" disabled={!canSubmit} style={{opacity:canSubmit?1:.5}}
+            onClick={()=>onSubmit({date:form.date, type:form.type, group:form.group, amount:Number(form.amount), memo:form.memo})}>
+            登録
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== History Page =====
+function HistoryPage({ transactions, cashIn, transfers, isAccountant, userGroups, tab, setTab, onSelectExpense, onSelectCashIn, onSelectTransfer }) {
+  const [showDeleted, setShowDeleted] = useState(false);
+
+  const visibleTxns = transactions
+    .filter(t => (showDeleted || t.status==='有効') && (isAccountant || userGroups.includes(t.group)))
+    .sort((a,b) => b.date.localeCompare(a.date));
+  const visibleCashIn = cashIn.filter(t => showDeleted || t.status==='有効').sort((a,b) => b.date.localeCompare(a.date));
+  const visibleTransfers = transfers.filter(t => showDeleted || t.status==='有効').sort((a,b) => b.date.localeCompare(a.date));
+
+  return (
+    <>
+      <div className="header"><h1>履歴</h1></div>
+      <div className="tabs">
+        <div className={`tab ${tab==='expenses'?'active':''}`} onClick={()=>setTab('expenses')}>支出</div>
+        {isAccountant && <div className={`tab ${tab==='cashIn'?'active':''}`} onClick={()=>setTab('cashIn')}>入金</div>}
+        {isAccountant && <div className={`tab ${tab==='transfers'?'active':''}`} onClick={()=>setTab('transfers')}>現金移動</div>}
+      </div>
+      <div className="content">
+        {isAccountant && (
+          <div className="px-4 py-2 flex justify-between items-center" style={{borderBottom:'1px solid var(--gray-100)'}}>
+            <span className="text-xs text-gray">削除済を表示</span>
+            <label style={{position:'relative',width:40,height:22,cursor:'pointer'}}>
+              <input type="checkbox" checked={showDeleted} onChange={e=>setShowDeleted(e.target.checked)} style={{display:'none'}} />
+              <div style={{width:40,height:22,borderRadius:11,background:showDeleted?'var(--blue-600)':'var(--gray-300)',transition:'background .2s',position:'relative'}}>
+                <div style={{width:18,height:18,borderRadius:9,background:'#fff',position:'absolute',top:2,left:showDeleted?20:2,transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
+              </div>
+            </label>
+          </div>
+        )}
+
+        {tab === 'expenses' && (
+          visibleTxns.length === 0
+            ? <div className="empty-state"><Icons.FileText /><p>支出記録がありません</p></div>
+            : visibleTxns.map(t => (
+              <div key={t.id} className="list-item" onClick={()=>onSelectExpense(t)} style={{opacity:t.status==='削除済'?.5:1}}>
+                <div className="list-icon" style={{background:t.status==='削除済'?'var(--gray-100)':'var(--blue-50)'}}>
+                  {t.method==='レシート撮影' ? <Icons.Camera style={{width:20,height:20,color:'var(--blue-600)'}} /> : <Icons.Edit style={{width:20,height:20,color:'var(--blue-600)'}} />}
+                </div>
+                <div className="list-body">
+                  <div className="list-title">{t.seller || t.category}</div>
+                  <div className="list-sub">{t.group} · {t.category}{t.status==='削除済' && <span className="badge badge-red" style={{marginLeft:6}}>削除済</span>}</div>
+                </div>
+                <div className="list-right">
+                  <div className="list-amount expense">-{fmt(t.amount)}</div>
+                  <div className="list-date">{fmtDate(t.date)}</div>
+                </div>
+              </div>
+            ))
+        )}
+
+        {tab === 'cashIn' && (
+          visibleCashIn.length === 0
+            ? <div className="empty-state"><Icons.DollarSign /><p>入金記録がありません</p></div>
+            : visibleCashIn.map(t => (
+              <div key={t.id} className="list-item" onClick={()=>onSelectCashIn(t)} style={{opacity:t.status==='削除済'?.5:1}}>
+                <div className="list-icon" style={{background:'var(--green-50)'}}>
+                  <Icons.ArrowDown style={{width:20,height:20,color:'var(--green-600)'}} />
+                </div>
+                <div className="list-body">
+                  <div className="list-title">{t.source}</div>
+                  <div className="list-sub">{t.memo}{t.status==='削除済' && <span className="badge badge-red" style={{marginLeft:6}}>削除済</span>}</div>
+                </div>
+                <div className="list-right">
+                  <div className="list-amount income">+{fmt(t.amount)}</div>
+                  <div className="list-date">{fmtDate(t.date)}</div>
+                </div>
+              </div>
+            ))
+        )}
+
+        {tab === 'transfers' && (
+          visibleTransfers.length === 0
+            ? <div className="empty-state"><Icons.ArrowRight /><p>現金移動記録がありません</p></div>
+            : visibleTransfers.map(t => (
+              <div key={t.id} className="list-item" onClick={()=>onSelectTransfer(t)} style={{opacity:t.status==='削除済'?.5:1}}>
+                <div className="list-icon" style={{background:t.type==='配布'?'var(--orange-50)':'var(--blue-50)'}}>
+                  {t.type==='配布'
+                    ? <Icons.ArrowRight style={{width:20,height:20,color:'var(--orange-600)'}} />
+                    : <Icons.ArrowUp style={{width:20,height:20,color:'var(--blue-600)'}} />}
+                </div>
+                <div className="list-body">
+                  <div className="list-title">{t.type} — {t.group}</div>
+                  <div className="list-sub">{t.memo}{t.status==='削除済' && <span className="badge badge-red" style={{marginLeft:6}}>削除済</span>}</div>
+                </div>
+                <div className="list-right">
+                  <div className={`list-amount ${t.type==='配布'?'expense':'income'}`}>{t.type==='配布'?'-':'+'}{fmt(t.amount)}</div>
+                  <div className="list-date">{fmtDate(t.date)}</div>
+                </div>
+              </div>
+            ))
+        )}
+      </div>
+    </>
+  );
+}
+
+// ===== Detail Pages =====
+function ExpenseDetailPage({ item, isAccountant, userGroups, categories, groups, onDelete, onRestore, onUpdate, onBack }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState(null);
+
+  if (!item) return null;
+  const canEdit = (isAccountant || userGroups.includes(item.group)) && item.status === '有効';
+
+  const startEdit = () => {
+    setForm({ date:item.date, seller:item.seller||'', amount:String(item.amount), category:item.category, group:item.group, memo:item.memo||'' });
+    setEditing(true);
+  };
+  const cancelEdit = () => { setEditing(false); setForm(null); };
+  const saveEdit = () => {
+    if (!form.date||!form.amount||!form.category||!form.group) return;
+    const updates = {
+      date:form.date, seller:form.seller, amount:Number(form.amount),
+      category:form.category, categoryGroup:categories?.find(c=>c.name===form.category)?.group||item.categoryGroup,
+      group:form.group, memo:form.memo,
+    };
+    onUpdate(item.id, updates);
+    setEditing(false);
+  };
+
+  const catGroups = useMemo(() => {
+    const map = {};
+    (categories||[]).forEach(c => { if(!map[c.group]) map[c.group]=[]; map[c.group].push(c); });
+    return map;
+  }, [categories]);
+
+  // ---- 編集モード ----
+  if (editing && form) {
+    const canSubmit = form.date && form.amount && form.category && form.group;
+    return (
+      <>
+        <div className="header">
+          <button className="header-btn" onClick={cancelEdit}><Icons.X /></button>
+          <h1>支出を編集</h1>
+          <button className="header-btn" onClick={saveEdit} disabled={!canSubmit} style={{opacity:canSubmit?1:.4}}>
+            <Icons.Check style={{width:20,height:20}} />
+          </button>
+        </div>
+        <div className="content"><div className="section">
+          <div className="form-group"><label className="form-label">購入日 *</label><input type="date" className="form-input" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} /></div>
+          <div className="form-group"><label className="form-label">店舗名</label><input type="text" className="form-input" placeholder="例: ファミリーマート" value={form.seller} onChange={e=>setForm({...form,seller:e.target.value})} /></div>
+          <div className="form-group"><label className="form-label">合計金額 (円) *</label><input type="number" className="form-input" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} /></div>
+          <div className="form-group">
+            <label className="form-label">勘定科目 *</label>
+            <select className="form-input form-select" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
+              <option value="">選択してください</option>
+              {Object.entries(catGroups).map(([grp,cats]) => (
+                <optgroup key={grp} label={grp}>{cats.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</optgroup>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">活動グループ *</label>
+            <select className="form-input form-select" value={form.group} onChange={e=>setForm({...form,group:e.target.value})}>
+              {(groups||[]).map(g=><option key={g.name||g} value={g.name||g}>{g.name||g}</option>)}
+            </select>
+          </div>
+          <div className="form-group"><label className="form-label">メモ</label><input type="text" className="form-input" placeholder="任意のメモ" value={form.memo} onChange={e=>setForm({...form,memo:e.target.value})} /></div>
+          <div className="flex gap-2 mt-4">
+            <button className="btn btn-secondary flex-1" onClick={cancelEdit}>キャンセル</button>
+            <button className="btn btn-primary flex-1" disabled={!canSubmit} style={{opacity:canSubmit?1:.5}} onClick={saveEdit}>保存</button>
+          </div>
+        </div></div>
+      </>
+    );
+  }
+
+  // ---- 表示モード ----
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>支出詳細</h1>
+        {canEdit && <button className="header-btn" onClick={startEdit}><Icons.Edit style={{width:18,height:18}} /></button>}
+      </div>
+      <div className="content">
+        <div className="section">
+          {item.status==='削除済' && <div className="badge badge-red mb-4" style={{fontSize:13,padding:'4px 12px'}}>この記録は削除されています</div>}
+          <div style={{fontSize:28,fontWeight:700,color:'var(--red-600)',marginBottom:16}}>-{fmt(item.amount)}</div>
+          <div className="detail-row"><div className="detail-label">購入日</div><div className="detail-value">{fmtDate(item.date)}</div></div>
+          <div className="detail-row"><div className="detail-label">店舗名</div><div className="detail-value">{item.seller || '—'}</div></div>
+          <div className="detail-row"><div className="detail-label">勘定科目</div><div className="detail-value"><span className="badge badge-blue">{item.category}</span></div></div>
+          <div className="detail-row"><div className="detail-label">科目グループ</div><div className="detail-value">{item.categoryGroup}</div></div>
+          <div className="detail-row"><div className="detail-label">活動グループ</div><div className="detail-value">{item.group}</div></div>
+          <div className="detail-row"><div className="detail-label">報告者</div><div className="detail-value">{item.reporter}</div></div>
+          <div className="detail-row"><div className="detail-label">入力方法</div><div className="detail-value"><span className={`badge ${item.method==='レシート撮影'?'badge-green':'badge-gray'}`}>{item.method}</span></div></div>
+          <div className="detail-row"><div className="detail-label">メモ</div><div className="detail-value">{item.memo || '—'}</div></div>
+          <div className="detail-row"><div className="detail-label">記録ID</div><div className="detail-value text-xs text-gray">{item.id}</div></div>
+          <div className="detail-row"><div className="detail-label">登録日時</div><div className="detail-value text-xs text-gray">{item.timestamp}</div></div>
+          {item.photoUrl && (
+            <div style={{marginTop:16}}>
+              <div className="form-label">レシート画像</div>
+              <div style={{background:'var(--gray-100)',borderRadius:'var(--radius-sm)',height:120,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--gray-400)',fontSize:14}}>
+                <Icons.Image style={{width:24,height:24,marginRight:8}} /> {item.photoUrl}
+              </div>
+            </div>
+          )}
+          {canEdit && <button className="btn btn-danger btn-block mt-4" onClick={()=>onDelete(item.id)}><Icons.Trash style={{width:16,height:16}} /> 削除</button>}
+          {isAccountant && item.status==='削除済' && <button className="btn btn-primary btn-block mt-4" onClick={()=>onRestore(item.id)}><Icons.RefreshCw style={{width:16,height:16}} /> 復元</button>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CashInDetailPage({ item, isAccountant, onDelete, onRestore, onBack }) {
+  if (!item) return null;
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>入金詳細</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          {item.status==='削除済' && <div className="badge badge-red mb-4" style={{fontSize:13,padding:'4px 12px'}}>この記録は削除されています</div>}
+          <div style={{fontSize:28,fontWeight:700,color:'var(--green-600)',marginBottom:16}}>+{fmt(item.amount)}</div>
+          <div className="detail-row"><div className="detail-label">入金日</div><div className="detail-value">{fmtDate(item.date)}</div></div>
+          <div className="detail-row"><div className="detail-label">入金元</div><div className="detail-value">{item.source}</div></div>
+          <div className="detail-row"><div className="detail-label">登録者</div><div className="detail-value">{item.recorder}</div></div>
+          <div className="detail-row"><div className="detail-label">メモ</div><div className="detail-value">{item.memo || '—'}</div></div>
+          <div className="detail-row"><div className="detail-label">記録ID</div><div className="detail-value text-xs text-gray">{item.id}</div></div>
+          {isAccountant && item.status==='有効' && (
+            <button className="btn btn-danger btn-block mt-4" onClick={()=>onDelete(item.id)}><Icons.Trash style={{width:16,height:16}} /> 削除</button>
+          )}
+          {isAccountant && item.status==='削除済' && (
+            <button className="btn btn-primary btn-block mt-4" onClick={()=>onRestore(item.id)}><Icons.RefreshCw style={{width:16,height:16}} /> 復元</button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TransferDetailPage({ item, isAccountant, onDelete, onRestore, onBack }) {
+  if (!item) return null;
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>現金移動詳細</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          {item.status==='削除済' && <div className="badge badge-red mb-4" style={{fontSize:13,padding:'4px 12px'}}>この記録は削除されています</div>}
+          <div style={{fontSize:28,fontWeight:700,color:item.type==='配布'?'var(--orange-600)':'var(--blue-600)',marginBottom:16}}>
+            {item.type==='配布'?'':'+'}{fmt(item.amount)}
+          </div>
+          <div className="detail-row"><div className="detail-label">種別</div><div className="detail-value"><span className={`badge ${item.type==='配布'?'badge-orange':'badge-blue'}`}>{item.type}</span></div></div>
+          <div className="detail-row"><div className="detail-label">日付</div><div className="detail-value">{fmtDate(item.date)}</div></div>
+          <div className="detail-row"><div className="detail-label">活動グループ</div><div className="detail-value">{item.group}</div></div>
+          <div className="detail-row"><div className="detail-label">登録者</div><div className="detail-value">{item.recorder}</div></div>
+          <div className="detail-row"><div className="detail-label">メモ</div><div className="detail-value">{item.memo || '—'}</div></div>
+          <div className="detail-row"><div className="detail-label">記録ID</div><div className="detail-value text-xs text-gray">{item.id}</div></div>
+          {isAccountant && item.status==='有効' && (
+            <button className="btn btn-danger btn-block mt-4" onClick={()=>onDelete(item.id)}><Icons.Trash style={{width:16,height:16}} /> 削除</button>
+          )}
+          {isAccountant && item.status==='削除済' && (
+            <button className="btn btn-primary btn-block mt-4" onClick={()=>onRestore(item.id)}><Icons.RefreshCw style={{width:16,height:16}} /> 復元</button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== Categories Page (editable) =====
+function CategoriesPage({ categories, onUpdate, onBack }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newGroup, setNewGroup] = useState('');
+  const existingGroups = [...new Set(categories.map(c => c.group))];
+
+  const toggleActive = (name) => {
+    onUpdate(categories.map(c => c.name === name ? {...c, active: !c.active} : c));
+  };
+  const addCategory = () => {
+    if (!newName.trim() || !newGroup.trim()) return;
+    onUpdate([...categories, { name: newName.trim(), group: newGroup.trim(), active: true }]);
+    setNewName(''); setNewGroup(''); setShowAdd(false);
+  };
+
+  const grouped = {};
+  categories.forEach(c => { if(!grouped[c.group]) grouped[c.group]=[]; grouped[c.group].push(c); });
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>勘定科目</h1>
+        <button className="header-btn" onClick={()=>setShowAdd(!showAdd)}><Icons.Plus style={{width:20,height:20}} /></button>
+      </div>
+      <div className="content">
+        {showAdd && (
+          <div className="section" style={{background:'var(--blue-50)',borderBottom:'1px solid var(--blue-200)'}}>
+            <div className="form-group">
+              <label className="form-label">科目名</label>
+              <input type="text" className="form-input" placeholder="例: 交通費" value={newName} onChange={e=>setNewName(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">グループ</label>
+              <input type="text" className="form-input" list="cat-groups" placeholder="例: 活動費" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+              <datalist id="cat-groups">{existingGroups.map(g => <option key={g} value={g} />)}</datalist>
+              <div className="text-xs text-gray mt-2">既存: {existingGroups.join(', ')}</div>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-secondary flex-1" onClick={()=>setShowAdd(false)}>キャンセル</button>
+              <button className="btn btn-primary flex-1" onClick={addCategory} disabled={!newName.trim()||!newGroup.trim()} style={{opacity:newName.trim()&&newGroup.trim()?1:.5}}>追加</button>
+            </div>
+          </div>
+        )}
+        {Object.entries(grouped).map(([group, cats]) => (
+          <div key={group}>
+            <div className="section-title px-4" style={{paddingTop:16}}>{group}</div>
+            {cats.map(c => (
+              <div key={c.name} className="list-item" onClick={()=>toggleActive(c.name)}>
+                <div className="list-icon" style={{background:c.active?'var(--blue-50)':'var(--gray-100)'}}>
+                  <Icons.Tag style={{width:18,height:18,color:c.active?'var(--blue-600)':'var(--gray-400)'}} />
+                </div>
+                <div className="list-body">
+                  <div className="list-title" style={{textDecoration:c.active?'none':'line-through',opacity:c.active?1:.5}}>{c.name}</div>
+                </div>
+                <label style={{position:'relative',width:40,height:22,cursor:'pointer',flexShrink:0}} onClick={e=>e.stopPropagation()}>
+                  <input type="checkbox" checked={c.active} onChange={()=>toggleActive(c.name)} style={{display:'none'}} />
+                  <div style={{width:40,height:22,borderRadius:11,background:c.active?'var(--green-500)':'var(--gray-300)',transition:'background .2s',position:'relative'}}>
+                    <div style={{width:18,height:18,borderRadius:9,background:'#fff',position:'absolute',top:2,left:c.active?20:2,transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
+                  </div>
+                </label>
+              </div>
+            ))}
+          </div>
+        ))}
+        <div className="section">
+          <p className="text-xs text-gray text-center">タップして有効/無効を切り替え。無効にした科目は新規記録のドロップダウンに表示されなくなりますが、既存の記録には影響しません。</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== Groups Page (editable) =====
+function GroupsPage({ groups, onUpdate, onBack }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  const toggleActive = (name) => {
+    onUpdate(groups.map(g => g.name === name ? {...g, active: !g.active} : g));
+  };
+  const addGroup = () => {
+    if (!newName.trim()) return;
+    onUpdate([...groups, { name: newName.trim(), active: true }]);
+    setNewName(''); setShowAdd(false);
+  };
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>活動グループ</h1>
+        <button className="header-btn" onClick={()=>setShowAdd(!showAdd)}><Icons.Plus style={{width:20,height:20}} /></button>
+      </div>
+      <div className="content">
+        {showAdd && (
+          <div className="section" style={{background:'var(--blue-50)',borderBottom:'1px solid var(--blue-200)'}}>
+            <div className="form-group">
+              <label className="form-label">グループ名</label>
+              <input type="text" className="form-input" placeholder="例: 企画グループ" value={newName} onChange={e=>setNewName(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-secondary flex-1" onClick={()=>setShowAdd(false)}>キャンセル</button>
+              <button className="btn btn-primary flex-1" onClick={addGroup} disabled={!newName.trim()} style={{opacity:newName.trim()?1:.5}}>追加</button>
+            </div>
+          </div>
+        )}
+        {groups.map(g => (
+          <div key={g.name} className="list-item" onClick={()=>toggleActive(g.name)}>
+            <div className="list-icon" style={{background:g.active?'var(--blue-50)':'var(--gray-100)'}}>
+              <Icons.Users style={{width:18,height:18,color:g.active?'var(--blue-600)':'var(--gray-400)'}} />
+            </div>
+            <div className="list-body">
+              <div className="list-title" style={{textDecoration:g.active?'none':'line-through',opacity:g.active?1:.5}}>{g.name}</div>
+            </div>
+            <label style={{position:'relative',width:40,height:22,cursor:'pointer',flexShrink:0}} onClick={e=>e.stopPropagation()}>
+              <input type="checkbox" checked={g.active} onChange={()=>toggleActive(g.name)} style={{display:'none'}} />
+              <div style={{width:40,height:22,borderRadius:11,background:g.active?'var(--green-500)':'var(--gray-300)',transition:'background .2s',position:'relative'}}>
+                <div style={{width:18,height:18,borderRadius:9,background:'#fff',position:'absolute',top:2,left:g.active?20:2,transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
+              </div>
+            </label>
+          </div>
+        ))}
+        <div className="section">
+          <p className="text-xs text-gray text-center">タップして有効/無効を切り替え。無効にしたグループは新規記録の選択肢に表示されなくなります。</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== Settings Page =====
+function SettingsPage({ data, isAccountant, onCategories, onGroups, onSettings, onNewFiscalYear, onAppSettings, onLogout, onStartSetup }) {
+  return (
+    <>
+      <div className="header"><h1>設定</h1></div>
+      <div className="content">
+        <div className="section">
+          <div className="section-title">アカウント</div>
+          <div className="card">
+            <div className="text-sm" style={{fontWeight:500}}>ログイン中</div>
+            <div className="text-xs text-gray mt-2">デモモードで動作中</div>
+          </div>
+        </div>
+
+        {isAccountant && (
+          <div className="section" style={{paddingTop:0}}>
+            <div className="section-title">経理メニュー</div>
+            <div className="list-item" onClick={onCategories} style={{border:'1px solid var(--gray-200)',borderRadius:'var(--radius-sm)',marginBottom:8}}>
+              <div className="list-icon" style={{background:'var(--blue-50)'}}><Icons.Tag style={{width:18,height:18,color:'var(--blue-600)'}} /></div>
+              <div className="list-body"><div className="list-title">勘定科目の管理</div><div className="list-sub">科目の追加・編集・無効化</div></div>
+              <Icons.ArrowRight style={{width:16,height:16,color:'var(--gray-400)'}} />
+            </div>
+            <div className="list-item" onClick={onNewFiscalYear} style={{border:'1px solid var(--gray-200)',borderRadius:'var(--radius-sm)',marginBottom:8}}>
+              <div className="list-icon" style={{background:'var(--green-50)'}}><Icons.Calendar style={{width:18,height:18,color:'var(--green-600)'}} /></div>
+              <div className="list-body"><div className="list-title">新年度を開始</div><div className="list-sub">新しい年度のファイルを作成</div></div>
+              <Icons.ArrowRight style={{width:16,height:16,color:'var(--gray-400)'}} />
+            </div>
+            <div className="list-item" onClick={onGroups} style={{border:'1px solid var(--gray-200)',borderRadius:'var(--radius-sm)',marginBottom:8}}>
+              <div className="list-icon" style={{background:'var(--orange-50)'}}><Icons.Users style={{width:18,height:18,color:'var(--orange-600)'}} /></div>
+              <div className="list-body"><div className="list-title">活動グループ管理</div><div className="list-sub">グループの追加・有効/無効切替</div></div>
+              <Icons.ArrowRight style={{width:16,height:16,color:'var(--gray-400)'}} />
+            </div>
+            <div className="list-item" onClick={onAppSettings} style={{border:'1px solid var(--gray-200)',borderRadius:'var(--radius-sm)',marginBottom:8}}>
+              <div className="list-icon" style={{background:'var(--gray-100)'}}><Icons.Settings style={{width:18,height:18,color:'var(--gray-600)'}} /></div>
+              <div className="list-body"><div className="list-title">アプリ設定</div><div className="list-sub">年度開始月・ホームフォルダ</div></div>
+              <Icons.ArrowRight style={{width:16,height:16,color:'var(--gray-400)'}} />
+            </div>
+            <div className="list-item" onClick={onStartSetup} style={{border:'1px solid var(--gray-200)',borderRadius:'var(--radius-sm)',marginBottom:8}}>
+              <div className="list-icon" style={{background:'var(--blue-50)'}}><Icons.Folder style={{width:18,height:18,color:'var(--blue-600)'}} /></div>
+              <div className="list-body"><div className="list-title">初期設定ウィザード</div><div className="list-sub">ホームフォルダの設定・再実行</div></div>
+              <Icons.ArrowRight style={{width:16,height:16,color:'var(--gray-400)'}} />
+            </div>
+          </div>
+        )}
+
+        <div className="section" style={{paddingTop:0}}>
+          <div className="section-title">その他</div>
+          <div className="card">
+            <div className="text-xs text-gray">年度開始月: {data.settings.年度開始月}月</div>
+            <div className="text-xs text-gray">現在の年度: {data.settings.現在の年度}</div>
+            <div className="text-xs text-gray mt-2">バージョン: 1.0.0 (UI Mockup)</div>
+          </div>
+          <button className="btn btn-danger btn-block mt-4" onClick={onLogout}>ログアウト</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== New Fiscal Year Page =====
+function NewFiscalYearPage({ data, onComplete, onBack }) {
+  const currentYear = data.settings.現在の年度;
+  const nextYear = currentYear + 1;
+  const [year, setYear] = useState(nextYear);
+  const existingYears = Object.keys(data.fiscalYears).map(Number);
+  const alreadyExists = existingYears.includes(year);
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>新年度を開始</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          <div className="card" style={{background:'var(--blue-50)',border:'1px solid var(--blue-200)',marginBottom:16}}>
+            <div className="text-sm text-blue">現在の年度: {currentYear}年度</div>
+            <div className="text-xs text-gray mt-2">年度開始月: {data.settings.年度開始月}月</div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">新しい年度</label>
+            <input type="number" className="form-input" value={year} onChange={e=>setYear(Number(e.target.value))} />
+          </div>
+
+          {alreadyExists && (
+            <div className="validation-warn" style={{marginBottom:16}}>
+              <span>⚠</span><span>{year}年度は既に存在します</span>
+            </div>
+          )}
+
+          <div className="card" style={{marginBottom:16}}>
+            <div className="text-sm mb-2" style={{fontWeight:500}}>作成されるもの:</div>
+            <div className="flex items-center gap-2" style={{padding:'6px 0'}}>
+              <Icons.FileText style={{width:16,height:16,color:'var(--green-600)'}} />
+              <span className="text-sm">経費管理_{year}.gsheet</span>
+            </div>
+            <div className="flex items-center gap-2" style={{padding:'6px 0'}}>
+              <Icons.Folder style={{width:16,height:16,color:'var(--orange-600)'}} />
+              <span className="text-sm">レシート画像/{year}/</span>
+            </div>
+            <p className="text-xs text-gray mt-4">各グループの予算は0円で作成されます。後から設定してください。</p>
+          </div>
+
+          <button className="btn btn-primary btn-block btn-lg" disabled={alreadyExists} style={{opacity:alreadyExists?.5:1}}
+            onClick={()=>onComplete(year)}>
+            {year}年度を作成
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== App Settings Page =====
+function AppSettingsPage({ data, onSave, onBack }) {
+  const [startMonth, setStartMonth] = useState(data.settings.年度開始月);
+  const [folderPath, setFolderPath] = useState(data.settings.ホームフォルダ || '経費管理');
+  const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onBack}><Icons.Back /></button>
+        <h1>アプリ設定</h1>
+      </div>
+      <div className="content">
+        <div className="section">
+          <div className="form-group">
+            <label className="form-label">年度開始月</label>
+            <select className="form-input form-select" value={startMonth} onChange={e=>setStartMonth(Number(e.target.value))}>
+              {months.map(m => <option key={m} value={m}>{m}月</option>)}
+            </select>
+            <div className="text-xs text-gray mt-2">例: 4月を選択すると、年度は4月〜翌年3月になります。</div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">ホームフォルダ名</label>
+            <input type="text" className="form-input" value={folderPath} onChange={e=>setFolderPath(e.target.value)} />
+            <div className="text-xs text-gray mt-2">Google Drive上のフォルダ名です。</div>
+          </div>
+
+          <div className="card" style={{background:'var(--gray-50)',marginTop:16}}>
+            <div className="section-title" style={{marginBottom:8}}>現在の設定</div>
+            <div className="text-xs text-gray">年度開始月: {data.settings.年度開始月}月</div>
+            <div className="text-xs text-gray">現在の年度: {data.settings.現在の年度}</div>
+            <div className="text-xs text-gray">既存の年度: {Object.keys(data.fiscalYears).join(', ')}</div>
+          </div>
+
+          <button className="btn btn-primary btn-block btn-lg mt-4"
+            onClick={()=>onSave({ 年度開始月: startMonth, ホームフォルダ: folderPath })}>
+            保存
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== Setup Wizard =====
+function SetupWizard({ step, setStep, onComplete, onCancel }) {
+  const steps = [
+    { title: 'ホームフォルダを選択', desc: 'Google Driveのフォルダを指定してください。このフォルダにスプレッドシートとレシート画像が保存されます。' },
+    { title: '活動グループを登録', desc: '団体の活動グループを追加してください。後からスプレッドシートで変更できます。' },
+    { title: '勘定科目を設定', desc: '支出の分類に使う勘定科目を設定してください。' },
+    { title: '最初の年度を作成', desc: '最初の年度のスプレッドシートを作成します。' },
+  ];
+  const [folderName, setFolderName] = useState('経費管理');
+  const [groups, setGroups] = useState(['企画グループ','広報グループ']);
+  const [newGroup, setNewGroup] = useState('');
+
+  return (
+    <>
+      <div className="header">
+        <button className="header-btn" onClick={onCancel}><Icons.X /></button>
+        <h1>初期設定</h1>
+        <span className="text-sm" style={{opacity:.7}}>{step+1}/{steps.length}</span>
+      </div>
+      <div className="wizard-progress">
+        {steps.map((_,i) => <div key={i} className={`wizard-bar ${i<step?'done':i===step?'current':''}`} />)}
+      </div>
+      <div className="content">
+        <div className="wizard-step">
+          <h3><span className="wizard-step-num">{step+1}</span>{steps[step].title}</h3>
+          <p className="text-sm text-gray mb-4">{steps[step].desc}</p>
+
+          {step === 0 && (
+            <>
+              <div className="form-group">
+                <label className="form-label">フォルダ名</label>
+                <input type="text" className="form-input" value={folderName} onChange={e=>setFolderName(e.target.value)} />
+              </div>
+              <div className="card" style={{background:'var(--blue-50)',border:'1px solid var(--blue-200)'}}>
+                <div className="text-sm text-blue">Google Drive に「{folderName}」フォルダを作成（または選択）します。</div>
+              </div>
+            </>
+          )}
+
+          {step === 1 && (
+            <>
+              {groups.map((g,i) => (
+                <div key={i} className="flex items-center gap-2 mb-2">
+                  <input type="text" className="form-input flex-1" value={g} onChange={e=>{const ng=[...groups];ng[i]=e.target.value;setGroups(ng);}} />
+                  <button className="btn btn-icon btn-danger" style={{flexShrink:0}} onClick={()=>setGroups(groups.filter((_,j)=>j!==i))}>
+                    <Icons.X style={{width:16,height:16}} />
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-2 mt-4">
+                <input type="text" className="form-input flex-1" placeholder="グループ名" value={newGroup} onChange={e=>setNewGroup(e.target.value)} />
+                <button className="btn btn-secondary" onClick={()=>{if(newGroup){setGroups([...groups,newGroup]);setNewGroup('');}}}><Icons.Plus style={{width:16,height:16}} /></button>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <div className="card">
+              <div className="text-sm text-gray mb-2">デフォルトの勘定科目が設定されます:</div>
+              {['交通費','消耗品費','食費・飲料','会場費','印刷費','通信費','雑費'].map(c => (
+                <div key={c} className="flex items-center gap-2" style={{padding:'4px 0'}}>
+                  <Icons.Check style={{width:14,height:14,color:'var(--green-600)'}} />
+                  <span className="text-sm">{c}</span>
+                </div>
+              ))}
+              <p className="text-xs text-gray mt-4">後からアプリまたはスプレッドシートで変更できます。</p>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="card">
+              <div className="text-sm mb-2">以下のファイルが作成されます:</div>
+              <div className="flex items-center gap-2" style={{padding:'6px 0'}}>
+                <Icons.FileText style={{width:16,height:16,color:'var(--blue-600)'}} />
+                <span className="text-sm">マスターデータ.gsheet</span>
+              </div>
+              <div className="flex items-center gap-2" style={{padding:'6px 0'}}>
+                <Icons.FileText style={{width:16,height:16,color:'var(--green-600)'}} />
+                <span className="text-sm">経費管理_2026.gsheet</span>
+              </div>
+              <div className="flex items-center gap-2" style={{padding:'6px 0'}}>
+                <Icons.Folder style={{width:16,height:16,color:'var(--orange-600)'}} />
+                <span className="text-sm">レシート画像/2026/</span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-4">
+            {step > 0 && <button className="btn btn-secondary flex-1" onClick={()=>setStep(step-1)}>戻る</button>}
+            {step < steps.length - 1
+              ? <button className="btn btn-primary flex-1" onClick={()=>setStep(step+1)}>次へ</button>
+              : <button className="btn btn-primary flex-1" onClick={onComplete}>セットアップ完了</button>
+            }
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ===== Render =====
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

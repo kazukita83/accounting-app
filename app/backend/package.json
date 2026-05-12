@@ -1,0 +1,10 @@
+{
+  "name": "expense-notify",
+  "version": "1.0.0",
+  "description": "Cloud Function for expense notification emails",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.0"
+  }
+}
